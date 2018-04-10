@@ -1,0 +1,42 @@
+<html>
+    <head>
+        <style>
+            body {
+				text-align: center;
+				border: 0 !important;
+				margin: 0 !important;
+				padding: 0 !important;
+			}
+            canvas {
+                border: 1px solid black;
+                image-rendering: optimizeSpeed;
+                image-rendering: -moz-crisp-edges;
+                image-rendering: -webkit-optimize-contrast;
+                image-rendering: optimize-contrast;
+                image-rendering: pixelated;
+                -ms-interpolation-mode: nearest-neighbor;
+                left: 0;
+                margin: 0 auto;
+                position: absolute;
+                right: 0; 
+                text-align: center;
+                width: 1024;
+                height: 896;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="canvasContainer">
+            <canvas id="background" width="256" height="224"></canvas>
+            <canvas id="people" width="256" height="224"></canvas>
+            <canvas id="text" width="256" height="224"></canvas>
+        </div>
+        <script src="data.js"></script>
+        <script src="words.js"></script>
+        <script src="games.js"></script>
+        <script src="person.js"></script>
+        <script src="drawing.js"></script>
+        <script src="slime.js"></script>
+        <script type="text/javascript">document.addEventListener("DOMContentLoaded", SlimeInit);</script>
+    </body>
+</html>

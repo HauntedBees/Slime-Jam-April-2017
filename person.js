@@ -32,9 +32,12 @@ function Person() {
             .replace(/{hfn}/g, gameData.host.firstName)
             .replace(/{hln}/g, gameData.host.lastName)
             .replace(/{cfn}/g, curPlayer.firstName)
-            .replace(/{cln}/g, curPlayer.lastName);
-        const written = this.firstName + ": " + ft.replace(/{doc}/g, ",").replace(/{sos}/g, "");
-        const spoken = ft.replace(/{doc}/g, "").replace(/{sos}/g, " ").replace(/___/g, "blank");
+            .replace(/{cln}/g, curPlayer.lastName)
+            .replace(/{fn0}/g, gameData.contestants[0].firstName)
+            .replace(/{fn1}/g, gameData.contestants[1].firstName)
+            .replace(/{fn2}/g, gameData.contestants[2].firstName);
+        const written = this.firstName + ": " + ft.replace(/{doc}/g, ",").replace(/{sos}/g, "").replace(/{g}/g, "g").replace(/{Emo}/g, "Emo");
+        const spoken = ft.replace(/{doc}/g, "").replace(/{sos}/g, " ").replace(/___/g, "blank").replace(/{g}/g, "juh").replace(/{Emo}/g, "eemo");
         return new Promise((resolve, reject) => {
             const msg = new SpeechSynthesisUtterance();
             msg.rate = this.rate;

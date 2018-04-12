@@ -5,8 +5,13 @@ const gameData = {
     currentPlayer: 0, currentRound: 0,
     currentCategory: undefined,
     currentQuestion: undefined, 
+    currentSentence: undefined, 
+    currentDatingQ: false, 
+    datingPlayer: -1, 
+    datingChoices: [], 
     waitingAction: undefined,
     hasAnnouncedCategories: false, 
+    hasAnnouncedSentence: false, 
     SendMessage: function(key) {
         let value = -1;
         switch(key) {
@@ -27,7 +32,10 @@ const gameData = {
 };
 function SlimeInit() {
     gameData.voices = speechSynthesis.getVoices();
-    const sheets = ["heads", "booth", "board", "screen", "buttons", "q_bb", "q_ch", "q_dq", "q_dt", "q_ff", "q_fl", "q_gb", "q_gs", "q_mc", "q_yi"];
+    const sheets = ["heads", 
+                    "booth", "board", "screen", "buttons",
+                    "words", "wordtile", "wordtilesm",
+                    "q_bb", "q_ch", "q_dq", "q_dt", "q_ff", "q_fl", "q_gb", "q_gs", "q_mc", "q_yi"];
     let sheetsRemaining = sheets.length;
     sheets.forEach(p => {
         const img = new Image();
@@ -70,21 +78,21 @@ function SlimeInitComplete() {
         }
         gameData.categories.push(newCat);
     }
+    //AnnounceSentence();
     StartAnnouncement();
 }
 
 function StartAnnouncement() {
     DrawPeople();
-    gameData.waitingAction = Spin;
-    /*gameData.host.Speak("Hello and welcome to another exciting episode of Wheel of Slime! I'm your host, {fn} {ln}! Tonight's guests are...")
+    gameData.host.Speak("Hello and welcome to another exciting episode of Wheel of Slime! I'm your host, {fn} {ln}! Tonight's guests are...")
     .then(() => gameData.host.Speak(GetSummary(gameData.contestants[0])))
     .then(() => gameData.contestants[0].Speak(ArrRand(openingLines)))
     .then(() => gameData.host.Speak(GetSummary(gameData.contestants[1])))
     .then(() => gameData.contestants[1].Speak(ArrRand(openingLines)))
     .then(() => gameData.host.Speak("and " + GetSummary(gameData.contestants[2])))
     .then(() => gameData.contestants[2].Speak(ArrRand(openingLines)))
-    .then(() => gameData.host.Speak("Let's have some fun! {hfn}, you're up first! Spin the Wheel of Slime!"))
-    .then(() => gameData.waitingAction = Spin);*/
+    .then(() => gameData.host.Speak("Let's have some fun! {cfn}, you're up first! Spin the Wheel of Slime!"))
+    .then(() => gameData.waitingAction = Spin);
 }
 function GetSummary(p) {
     let str = p.firstName + " " + p.lastName + ", a" + (IntVowelStart(p.age) ? "n " : " ") + p.age + " year old " + p.job + " from " + p.hometown.replace(", ", "{doc} ");

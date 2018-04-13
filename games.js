@@ -1,6 +1,6 @@
 function Spin() {
     ClearAction();
-    const gameType = IRange(0, 3);
+    const gameType = IRange(0, 4);
     switch(gameType) {
         case 0:
             if(gameData.hasAnnouncedCategories) {
@@ -18,12 +18,78 @@ function Spin() {
                 AnnounceSentence();
             }
             break;
-        case 2:
-            AnnounceDating();
-            break;
+        case 2: AnnounceDating(); break;
+        case 3: AnnounceQuirk(0); break;
     }
 }
 
+// TODO: checks for when there are no more choices for a given category
+// TODO: balance how often each category appears
+
+
+// Quirks
+const randomSlimeComments = [
+    "I'm bonkers for slime!", "Have I mentioned how much I love slime lately?", "I'm coo-coo for slime puffs!", "I appreciate slime.",
+    "Did you know slime is technically a fruit?", "Slime? Yes please, ha ha!", "Slime is my religion.", "If you don't like slime, I don't like you.",
+    "Slime is like a box of chocolates: it's good.", "Slime me up!", "Pass the slime, please!", "Please, sir, may I have some more slime?",
+    "Please provide me with slime.", "Slime, please!", "Give me the good slime.", "Slime slime slime slime slime.", "Slime is my wife and I love her.", 
+    "Slime is gooey and good.", "Slime is the best.", "Reminder: slime is great!", "Vote for slime.", "Send that slime my way!", "Slime.", 
+    "I diagnose you with slime.", "Me gusta slime.", "I would kill for some slime right now!", "I respect and appreciate slime.", "Such is the word of the slime."
+];
+const quirks = [
+    "You must now pronounce \"ou\" like \"eu!\"",
+    "You must now pronounce all plural words with an \"ez!\"",
+    "You must now end every sentence with a rhyme!",
+    "You can no longer use articles like \"the,\" \"a,\" and \"an!\"",
+    "You can't not talk about slime all the time.",
+    "Every sentence you speak must be in the form of a question.",
+    "You must pronounce every vowel as an \"e.\"",
+    "You must get everybody's name wrong."
+];
+function ProcessQuirks(str, q) {
+    str = " " + str;
+    if((q & 16) !== 0) { str += " " + ArrRand(randomSlimeComments); }
+    if((q & 128) !== 0) {
+        str = str.replace(new RegExp(gameData.host.firstName, "gi"), ArrRand(firstNames));
+        str = str.replace(new RegExp(gameData.contestants[0].firstName, "gi"), ArrRand(firstNames));
+        str = str.replace(new RegExp(gameData.contestants[1].firstName, "gi"), ArrRand(firstNames));
+        str = str.replace(new RegExp(gameData.contestants[2].firstName, "gi"), ArrRand(firstNames));
+    }
+    if((q & 1) !== 0) { str = str.replace(/ou/g, "eu"); }
+    if((q & 2) !== 0) { str = str.replace(/([a-z]+?)(s)([^a-z])/gi, "$1ez$3"); }
+    if((q & 4) !== 0) { const letter = ArrRand("bcdfghjklmprstvwy"); str = str.replace(/([a-z])([a-z]+)([.!?])/gi, "$1$2-" + letter + "$2$3"); }
+    if((q & 8) !== 0) { str = str.replace(/[^a-z]the[^a-z]/gi, " ").replace(/[^a-z]an[^a-z]/gi, " ").replace(/[^a-z]a[^a-z]/gi, " "); }
+    if((q & 32) !== 0) { str = str.replace(/[.!]/gi, "?"); }
+    if((q & 64) !== 0) { str = str.replace(/[aiou]/g, "e").replace(/[AIOU]/g, "E"); }
+    return str.substring(1);
+}
+function AnnounceQuirk(jeff) {
+    const quirkIdx = IRange(0, quirks.length);
+    const quirk = Math.pow(2, quirkIdx);
+    if((gameData.currentPlayer.quirks & quirk) !== 0) { // player already has this quirk!
+        if(jeff === 5) { // already tried five times!
+            gameData.currentPlayer.score -= 50;
+            gameData.host.Speak("You landed on \"Speech Quirks\" but you're already quirky enough! You can pay the quirk tax of 50 points!")
+            .then(() => {
+                gameData.currentPlayer = (gameData.currentPlayer + 1) % 3;
+                return gameData.host.Speak("{cfn}, you're up next! Spin that motherfucking wheel!");
+            }).then(() => { gameData.waitingAction = Spin; });
+        } else {
+            AnnounceQuirk(jeff + 1);
+        }
+    } else {
+        gameData.host.Speak("You landed on \"Speech Quirks!\" For the rest of this game, you will have to speak with the following quirk:")
+        .then(() => gameData.host.Speak(quirks[quirkIdx]))
+        .then(() => {
+            gameData.contestants[gameData.currentPlayer].quirks += quirk;
+            return gameData.contestants[gameData.currentPlayer].Speak("Oh golly, that sure won't get old immediately, {hfn}!");
+        })
+        .then(() => {
+            gameData.currentPlayer = (gameData.currentPlayer + 1) % 3;
+            gameData.host.Speak("And that's it! Don't forget or you'll die! Ha ha! {cfn}, you're up next! Spin that shit!");
+        }).then(() => { gameData.waitingAction = Spin; });
+    }
+}
 
 // Just Watching the Dating Game
 const dating = [
@@ -122,11 +188,11 @@ function SetUpDatingQuestions() {
     ClearAllLayers();
     DrawImage("background", gameData.sheets["screen"], 0, 0, fullScreenDims);
     DrawText("Q. " + dq.q, 30, 50, "people", 12, 196, "#FFFFFF");
-    DrawText("1. " + dq.a[answers[0]], 30, 80, "people", 12, 196, "#FFFFFF");
-    DrawText("2. " + dq.a[answers[1]], 30, 110, "people", 12, 196, "#FFFFFF");
-    DrawText("3. " + dq.a[answers[2]], 30, 140, "people", 12, 196, "#FFFFFF");
-    DrawText("4. " + dq.a[answers[3]], 30, 170, "people", 12, 196, "#FFFFFF");
-    for(let i = 0; i < 4; i++) { DrawButton(i, 4, 65 + i * 30, true); }
+    DrawText("1. " + dq.a[answers[0]], 30, 85, "people", 12, 196, "#FFFFFF");
+    DrawText("2. " + dq.a[answers[1]], 30, 120, "people", 12, 196, "#FFFFFF");
+    DrawText("3. " + dq.a[answers[2]], 30, 155, "people", 12, 196, "#FFFFFF");
+    DrawText("4. " + dq.a[answers[3]], 30, 190, "people", 12, 196, "#FFFFFF");
+    for(let i = 0; i < 4; i++) { DrawButton(i, 4, 65 + i * 35, true); }
     gameData.waitingAction = PickDatingAnswer;
 }
 function PickDatingAnswer(idx) {
@@ -168,6 +234,7 @@ function PickDatingContestant(idx) {
     if(idx >= 2) { return; }
     ClearAction();
     const winner = gameData.datingChoices[idx][0];
+    dating.splice(gameData.currentDatingQ, 1); // prevent duplication
     gameData.host.Speak("And it looks like your slime-mate is... {fn" + winner + "}!")
     .then(() => {
         const ds = Math.round(gameData.contestants[winner].score / 3);

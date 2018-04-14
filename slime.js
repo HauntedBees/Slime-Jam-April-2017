@@ -2,16 +2,21 @@ const gameData = {
     voices: [], sheets: {}, ctx: {},
     host: null, contestants: [],
     isTalking: false,
-    currentPlayer: 0, currentRound: 0,
+    waitingAction: undefined,
+    currentPlayer: 0,
+    currentRound: 0, // TODO: make me useful father
+    wheelSpinIdx: -1, 
     currentCategory: undefined,
     currentQuestion: undefined, 
     currentSentence: undefined, 
     currentDatingQ: false, 
     datingPlayer: -1, 
     datingChoices: [], 
-    waitingAction: undefined,
+    dilemmaBuddy: -1, 
+    dilemmaChoiceA: -1, dilemmaChoiceB: -1, 
     hasAnnouncedCategories: false, 
     hasAnnouncedSentence: false, 
+    hasAnnouncedPrisoner: false, 
     SendMessage: function(key) {
         let value = -1;
         switch(key) {
@@ -33,6 +38,7 @@ const gameData = {
 function SlimeInit() {
     gameData.voices = speechSynthesis.getVoices();
     const sheets = ["heads", 
+                    "wheel", "thwuck", 
                     "booth", "board", "screen", "buttons",
                     "words", "wordtile", "wordtilesm",
                     "q_bb", "q_ch", "q_dq", "q_dt", "q_ff", "q_fl", "q_gb", "q_gs", "q_mc", "q_yi"];
@@ -47,11 +53,12 @@ function SlimeInit() {
         };
         img.src = "img/" + p + ".png";
     });
-    const layers = ["background", "people", "UI", "text"];
+    const layers = ["background", "people", "UI", "textBack", "text"];
     layers.forEach(p => {
         const e = document.getElementById(p);
         gameData.ctx[p] = e.getContext("2d");
     });
+    gameData.ctx["textBack"].fillStyle = "#9999FFCC";
     document.addEventListener("keypress", input.KeyPress);
     window.addEventListener("gamepadconnected", input.GamepadConnected);
     window.addEventListener("gamepaddisconnected", input.GamepadDisconnected);
@@ -78,7 +85,6 @@ function SlimeInitComplete() {
         }
         gameData.categories.push(newCat);
     }
-    //AnnounceSentence();
     StartAnnouncement();
 }
 

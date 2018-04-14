@@ -1,31 +1,199 @@
 function Spin() {
     ClearAction();
-    const gameType = IRange(0, 4);
-    switch(gameType) {
-        case 0:
-            if(gameData.hasAnnouncedCategories) {
-                ChooseCategory();
-            } else {
-                gameData.hasAnnouncedCategories = true;
-                AnnounceCategories();
-            }
-            break;
-        case 1:
-            if(gameData.hasAnnouncedSentence) {
-                ChooseSentence();
-            } else {
-                gameData.hasAnnouncedSentence = true;
-                AnnounceSentence();
-            }
-            break;
-        case 2: AnnounceDating(); break;
-        case 3: AnnounceQuirk(0); break;
+    ClearAllLayers();
+    const angle = IRange(0, 360);
+    const drawAngle = (IRange(1, 4) * 360) + angle;
+    let curAngle = 0;
+    gameData.wheelSpinIdx = setInterval(function() {
+        if(curAngle > drawAngle) { // spinning complete
+            clearInterval(gameData.wheelSpinIdx);
+            gameData.wheelSpinIdx = -1;
+            RevealSpinChoice(angle);
+        } else { // still spinning
+            const dAmount = Math.max(0.15, Math.min(2, 2 * (1 - Math.pow(curAngle / drawAngle, 2))));
+            curAngle += dAmount;
+            DrawWheel(curAngle);
+        }
+    }, 10);
+    DrawWheel();
+}
+function RevealSpinChoice(angle) {
+    if(angle <= 36 || angle > 324) {
+        if(gameData.hasAnnouncedCategories) { ChooseCategory(); }
+        else { AnnounceCategories(); }
+    } else if(angle <= 72) {
+        AnnounceDating();
+    } else if(angle <= 144) {
+        if(gameData.hasAnnouncedSentence) { ChooseSentence(); }
+        else { AnnounceSentence(); }
+    } else if(angle <= 162) {
+        AnnounceSmallTalk();
+    } else if(angle <= 216) {
+        AnnounceSlime();
+    } else if(angle <= 234) {
+        AnnounceQuirk(0);
+    } else if(angle <= 288) {
+        AnnounceVacuum();
+    } else if(angle <= 324) {
+        if(gameData.hasAnnouncedPrisoner) { OuterChooseDilemma(); }
+        else { AnnounceDilemma(); }
     }
 }
 
 // TODO: checks for when there are no more choices for a given category
-// TODO: balance how often each category appears
 
+// Slime Leak
+function AnnounceSmallTalk() {
+    gameData.host.Speak("\"Small talk!\" So, uh, what's new with you?")
+    .then(() => gameData.contestants[gameData.currentPlayer].Speak("Not much."))
+    .then(() => {
+        gameData.currentPlayer = (gameData.currentPlayer + 1) % 3;
+        return gameData.host.Speak("Sick. Good talk. {cfn}, you're up next! Spin the wheel!");
+    }).then(() => { gameData.waitingAction = Spin; });
+}
+
+// Slime Vacuum
+function AnnounceVacuum() {
+    gameData.host.Speak("Oh no... The \"Slime Vacuum.\" That means you lose half of your Slime Points, plus another 100 on top of that!")
+    .then(() => gameData.contestants[gameData.currentPlayer].Speak("Bastard fuck.")) // TODO: add some animation here
+    .then(() => {
+        const score = Math.round(gameData.contestants[gameData.currentPlayer].score / 2) - 100;
+        gameData.contestants[gameData.currentPlayer].score += score;
+        gameData.currentPlayer = (gameData.currentPlayer + 1) % 3;
+        return gameData.host.Speak("Your new score is " + score + " Slime Points! Better luck next round! {cfn}, you're up next! Spin the wheel!");
+    }).then(() => { gameData.waitingAction = Spin; });
+}
+
+// Slime Prisoner's Dilemma
+function AnnounceDilemma() {
+    gameData.hasAnnouncedPrisoner = true;
+    const contestants = [0, 1, 2];
+    contestants.splice(gameData.currentPlayer, 1);
+    gameData.dilemmaBuddy = ArrRand(contestants);
+    gameData.host.Speak("Oh ho ho! The \"Slime Prisoner's Dilemma!\" {cfn}, you and {fn" + gameData.dilemmaBuddy + "} are about to slime up... or slime down!!")
+    .then(() => gameData.host.Speak("You will both be given a chance to choose COOPERATE, DEFECT, or SLIME."))
+    .then(() => gameData.host.Speak("If you both COOPERATE, you will both gain 400 Slime Points!"))
+    .then(() => gameData.host.Speak("If you both DEFECT, you will both lose 100 Slime Points!"))
+    .then(() => gameData.host.Speak("BUT... if one of you COOPERATES and one of you DEFECTS... the DEFECTOR will gain 800 Slime Points while the COOPERATOR loses 200!"))
+    .then(() => gameData.host.Speak("As for SLIME... well, we all know what SLIME does!"))
+    .then(() => gameData.host.Speak("So now that the rules are out of the way, let's SLIME IT UP!"))
+    .then(ChooseDilemma);
+}
+function OuterChooseDilemma() {
+    const contestants = [0, 1, 2];
+    contestants.splice(gameData.currentPlayer, 1);
+    gameData.dilemmaBuddy = ArrRand(contestants);
+    gameData.host.Speak("The \"Slime Prisoner's Dilemma!\" {cfn}, you and {fn" + gameData.dilemmaBuddy + "} are about to slime up... or slime down!!")
+    .then(ChooseDilemma);
+}
+function SetUpDilemmaDisplay() {
+    ClearAllLayers();
+    DrawImage("background", gameData.sheets["screen"], 0, 0, fullScreenDims);
+    DrawLeftText("Both COOPERATE to gain 400 points. Both DEFECT to lose 100 points. DEFECT and COOPERATE to get 800 and lose 200 points respectively!", 30, 50);
+    DrawLeftText("1. COOPERATE.", 30, 125);
+    DrawLeftText("2. DEFECT", 30, 160);
+    DrawLeftText("3. SLIME", 30, 195);
+    for(let i = 0; i < 3; i++) { DrawButton(i, 4, 110 + i * 35, true); }
+}
+function ChooseDilemma() {
+    gameData.host.Speak("{fn" + gameData.dilemmaBuddy + "}, close your eyes or leave the room while {cfn} makes their choice!")
+    .then(() => gameData.host.Speak("Alright, {cfn}, make your choice!"))
+    .then(() => {
+        SetUpDilemmaDisplay();
+        gameData.waitingAction = FirstDilemmaSelect;
+    });
+}
+function FirstDilemmaSelect(idx) {
+    if(idx >= 3) { return; }
+    ClearAction();
+    gameData.dilemmaChoiceA = idx;
+    ClearAllLayers();
+    DrawPeople();
+    gameData.host.Speak("Excellent. {fn" + gameData.dilemmaBuddy + "}, open your eyes! Now it's your turn to pick! {cfn}, close your eyes!")
+    .then(() => gameData.host.Speak("Alright, {fn" + gameData.dilemmaBuddy + "}, make your choice!"))
+    .then(() => {
+        SetUpDilemmaDisplay();
+        gameData.waitingAction = SecondDilemmaSelect;
+    });
+}
+function SecondDilemmaSelect(idx) {
+    if(idx >= 3) { return; }
+    ClearAction();
+    gameData.dilemmaChoiceB = idx;
+    ClearAllLayers();
+    DrawPeople();
+    gameData.host.Speak("Excellent. {cfn}, you can open your eyes now! It's time to see the results! You chose...")
+    .then(() => {
+        const choiceA = ["Collaborate", "Defect", "Slime"][gameData.dilemmaChoiceA];
+        const choiceB = ["Collaborate", "Defect", "Slime"][gameData.dilemmaChoiceB];
+        return gameData.host.Speak(choiceA + " and " + choiceB + "!");
+    })
+    .then(() => {
+        if(gameData.dilemmaChoiceA === gameData.dilemmaChoiceB) {
+            if(gameData.dilemmaChoiceA === 0) { // both collaborated!
+                gameData.contestants[gameData.currentPlayer].score += 400;
+                gameData.contestants[gameData.dilemmaBuddy].score += 400;
+                return gameData.host.Speak("How friendly! Truly we are blessed by trust on this lovely night. You both gain 400 Slime Points!");
+            } else if(gameData.dilemmaChoiceA === 1) { // both defected!
+                gameData.contestants[gameData.currentPlayer].score -= 100;
+                gameData.contestants[gameData.dilemmaBuddy].score -= 100;
+                return gameData.host.Speak("How sad! You both lose 100 Slime Points! Y'all need to learn how to trust!");
+            } else { // both slimed!
+                const newScore = 1000 + Math.max(gameData.contestants[0].score, gameData.contestants[1].score, gameData.contestants[2].score);
+                gameData.contestants.forEach(e => e.score = newScore);
+                return gameData.host.Speak("Slimetastic! You both chose SLIME! Now EVERYONE has " + newScore + " Slime Points! Universal Basic Slime-come!");
+            }
+        } else {
+            if(gameData.dilemmaChoiceA === 0) { // A chose COLLABORATE
+                if(gameData.dilemmaChoiceB === 1) { // but B chose DEFECT
+                    gameData.contestants[gameData.currentPlayer].score -= 200;
+                    gameData.contestants[gameData.dilemmaBuddy].score += 800;
+                    return gameData.host.Speak("Harsh! But that means {fn" + gameData.dilemmaBuddy + "} gains 800 Slime Points while {cfn} loses 200!");
+                } else { // but B chose SLIME
+                    gameData.contestants[gameData.currentPlayer].score += 400;
+                    return gameData.host.Speak("{cfn} collaborates with the slime and gets 400 Slime Points!");
+                }
+            } else if(gameData.dilemmaChoiceA === 1) { // A chose DEFECT
+                if(gameData.dilemmaChoiceB === 0) { // but B chose COLLABORATE
+                    gameData.contestants[gameData.currentPlayer].score += 800;
+                    gameData.contestants[gameData.dilemmaBuddy].score -= 200;
+                    return gameData.host.Speak("Harsh! But that means {cfn} gains 800 Slime Points while {fn" + gameData.dilemmaBuddy + "} loses 200!");
+                } else { // but B chose SLIME
+                    const prevScore = gameData.contestants[gameData.currentPlayer].score;
+                    gameData.contestants[gameData.currentPlayer].score = Math.floor(gameData.contestants[gameData.currentPlayer].score / 10);
+                    const newScore = prevScore - gameData.contestants[gameData.currentPlayer].score;
+                    return gameData.host.Speak("{cfn} defects from the slime and loses " + newScore + " Slime Points!");
+                }
+            } else { // A chose SLIME
+                if(gameData.dilemmaChoiceB === 0) { // but B chose COLLABORATE
+                    gameData.contestants[gameData.dilemmaBuddy].score += 400;
+                    return gameData.host.Speak("{fn" + gameData.dilemmaBuddy + "} collaborates with the slime and gets 400 Slime Points!");
+                } else { // but B chose DEFECT
+                    const prevScore = gameData.contestants[gameData.dilemmaBuddy].score;
+                    gameData.contestants[gameData.dilemmaBuddy].score = Math.floor(gameData.contestants[gameData.dilemmaBuddy].score / 10);
+                    const newScore = prevScore - gameData.contestants[gameData.dilemmaBuddy].score;
+                    return gameData.host.Speak("{fn" + gameData.dilemmaBuddy + "} defects from the slime and loses " + newScore + " Slime Points!");
+                }
+            }
+        }
+    })
+    .then(() => {
+        gameData.currentPlayer = (gameData.currentPlayer + 1) % 3;
+        return gameData.host.Speak("A good time was had by all. {cfn}, you're up next! Spin the wheel!");
+    }).then(() => { gameData.waitingAction = Spin; });
+}
+
+// Freep Hoynts
+function AnnounceSlime() {
+    gameData.host.Speak("You landed on \"Free Points!\" That means you're going to get some slime points delivered DIRECTLY TO YOU AND YOUR BODY!")
+    .then(() => gameData.contestants[gameData.currentPlayer].Speak("Oh boy! Slime me up!")) // TODO: add some animation here
+    .then(() => {
+        const score = Range(50, 501);
+        gameData.contestants[gameData.currentPlayer].score += score;
+        gameData.currentPlayer = (gameData.currentPlayer + 1) % 3;
+        return gameData.host.Speak("You just earned yourself " + score + " slime points! Congratulations! {cfn}, you're up next! Spin the wheel!");
+    }).then(() => { gameData.waitingAction = Spin; });
+}
 
 // Quirks
 const randomSlimeComments = [
@@ -43,10 +211,10 @@ const quirks = [
     "You can no longer use articles like \"the,\" \"a,\" and \"an!\"",
     "You can't not talk about slime all the time.",
     "Every sentence you speak must be in the form of a question.",
-    "You must pronounce every vowel as an \"e.\"",
+    "You must pronounce every vowel as an \"@.\"",
     "You must get everybody's name wrong."
 ];
-function ProcessQuirks(str, q) {
+function ProcessQuirks(str, q, sq) {
     str = " " + str;
     if((q & 16) !== 0) { str += " " + ArrRand(randomSlimeComments); }
     if((q & 128) !== 0) {
@@ -60,13 +228,17 @@ function ProcessQuirks(str, q) {
     if((q & 4) !== 0) { const letter = ArrRand("bcdfghjklmprstvwy"); str = str.replace(/([a-z])([a-z]+)([.!?])/gi, "$1$2-" + letter + "$2$3"); }
     if((q & 8) !== 0) { str = str.replace(/[^a-z]the[^a-z]/gi, " ").replace(/[^a-z]an[^a-z]/gi, " ").replace(/[^a-z]a[^a-z]/gi, " "); }
     if((q & 32) !== 0) { str = str.replace(/[.!]/gi, "?"); }
-    if((q & 64) !== 0) { str = str.replace(/[aiou]/g, "e").replace(/[AIOU]/g, "E"); }
+    if((q & 64) !== 0) {
+        const subquirkLC = "aeiou"[sq];
+        const subquirkUC = "AEIOU"[sq];
+        str = str.replace(/[aeiou]/g, subquirkLC).replace(/[AEIOU]/g, subquirkUC);
+    }
     return str.substring(1);
 }
 function AnnounceQuirk(jeff) {
     const quirkIdx = IRange(0, quirks.length);
     const quirk = Math.pow(2, quirkIdx);
-    if((gameData.currentPlayer.quirks & quirk) !== 0) { // player already has this quirk!
+    if((gameData.contestants[gameData.currentPlayer].quirks & quirk) !== 0) { // player already has this quirk!
         if(jeff === 5) { // already tried five times!
             gameData.currentPlayer.score -= 50;
             gameData.host.Speak("You landed on \"Speech Quirks\" but you're already quirky enough! You can pay the quirk tax of 50 points!")
@@ -79,7 +251,15 @@ function AnnounceQuirk(jeff) {
         }
     } else {
         gameData.host.Speak("You landed on \"Speech Quirks!\" For the rest of this game, you will have to speak with the following quirk:")
-        .then(() => gameData.host.Speak(quirks[quirkIdx]))
+        .then(() => {
+            let qstr = quirks[quirkIdx];
+            if(quirkIdx === 6) {
+                const subquirkNum = IRange(0, 5);
+                gameData.contestants[gameData.currentPlayer].subquirk = subquirkNum;
+                qstr = qstr.replace("@", "aeiou"[subquirkNum]);
+            }
+            return gameData.host.Speak(qstr);
+        })
         .then(() => {
             gameData.contestants[gameData.currentPlayer].quirks += quirk;
             return gameData.contestants[gameData.currentPlayer].Speak("Oh golly, that sure won't get old immediately, {hfn}!");
@@ -132,7 +312,7 @@ const dating = [
     ]},
     { q: "What's something you've always wanted to do?", a: [
         "Die.", "Get married.", "Acquire large amounts of slime.", "Become slime.", "Be elected president.", "Own a house.", 
-        "Win the lottery.", "Start a band.", "Write a book.", "Be a movie star.", "Get to first base.", "Catch all the Pokémon.", 
+        "Win the lottery.", "Start a band.", "Write a book.", "Be a movie star.", "Get to first base.", "Catch all the Pok&eacute;mon.", 
         "Become a famous chef.", "Date a supermodel.", "Go to outer space.", "Find Bigfoot.", "Kiss Bigfoot.", "Eat a lot of pasta.", 
         "Paint a masterpiece.", "Commit tax fraud.", "Get a PhD.", "Cure cancer.", "Throw a pie at Bill Gates.", "Overthrow the government.",
         "Find a mermaid.", "Win \"Wheel of Slime.\"", "Get banned from a sports stadium.", "Become a professional athlete.", "Shave.",
@@ -187,11 +367,11 @@ function SetUpDatingQuestions() {
     gameData.datingAnswers = answers;
     ClearAllLayers();
     DrawImage("background", gameData.sheets["screen"], 0, 0, fullScreenDims);
-    DrawText("Q. " + dq.q, 30, 50, "people", 12, 196, "#FFFFFF");
-    DrawText("1. " + dq.a[answers[0]], 30, 85, "people", 12, 196, "#FFFFFF");
-    DrawText("2. " + dq.a[answers[1]], 30, 120, "people", 12, 196, "#FFFFFF");
-    DrawText("3. " + dq.a[answers[2]], 30, 155, "people", 12, 196, "#FFFFFF");
-    DrawText("4. " + dq.a[answers[3]], 30, 190, "people", 12, 196, "#FFFFFF");
+    DrawLeftText("Q. " + dq.q, 30, 50);
+    DrawLeftText("1. " + dq.a[answers[0]], 30, 85);
+    DrawLeftText("2. " + dq.a[answers[1]], 30, 120);
+    DrawLeftText("3. " + dq.a[answers[2]], 30, 155);
+    DrawLeftText("4. " + dq.a[answers[3]], 30, 190);
     for(let i = 0; i < 4; i++) { DrawButton(i, 4, 65 + i * 35, true); }
     gameData.waitingAction = PickDatingAnswer;
 }
@@ -222,9 +402,9 @@ function PickDatingAnswer(idx) {
         .then(() => {
             ClearAllLayers();
             DrawImage("background", gameData.sheets["screen"], 0, 0, fullScreenDims);
-            DrawText("Q. " + dq.q, 30, 70, "people", 12, 196, "#FFFFFF");
-            DrawText("1. " + dq.a[gameData.datingChoices[0][1]], 30, 110, "people", 12, 196, "#FFFFFF");
-            DrawText("2. " + dq.a[gameData.datingChoices[1][1]], 30, 150, "people", 12, 196, "#FFFFFF");
+            DrawLeftText("Q. " + dq.q, 30, 70);
+            DrawLeftText("1. " + dq.a[gameData.datingChoices[0][1]], 30, 110);
+            DrawLeftText("2. " + dq.a[gameData.datingChoices[1][1]], 30, 150);
             for(let i = 0; i < 2; i++) { DrawButton(i, 4, 95 + i * 40, true); }
             gameData.waitingAction = PickDatingContestant;
         });
@@ -325,6 +505,7 @@ const sentences = [
     },
 ];
 function AnnounceSentence() {
+    gameData.hasAnnouncedSentence = true;
     const sFull = ArrRand(sentences);
     const s = sFull.text;
     gameData.currentSentence = { full: sFull, guessedLetters: [], populated: "", remainingLetters: [] };
@@ -353,7 +534,7 @@ function SetLetters() {
     }
     Shuffle(letters);
     for(let i = 0; i < 4; i++) {
-        DrawText(`${i + 1}. ${letters[i].toUpperCase()}`, 33 + (i * 60), 215, "UI", "16");
+        DrawUIText(`${i + 1}. ${letters[i].toUpperCase()}`, 33 + (i * 60), 215);
         DrawButton(i, 10 + (i * 60), 200, true);
     }
     gameData.waitingAction = SelectLetter;
@@ -420,7 +601,7 @@ const questions = {
             ["Dragon Quest", "Final Fantasy", "Super Mario Bros.", "Kirby"]),
             new ImgQA("What popular video game does this slime come from?", "q_mc",
             ["Minecraft", "Tetris", "Roblox", "Slime Rancher"]),
-            new ImgQA("What is this slimey Pokémon's name?", "q_dt",
+            new ImgQA("What is this slimey Pok&eacute;mon's name?", "q_dt",
             ["Ditto", "Muk", "Grimer", "Slimeking"]),
             new ImgQA("This monster from the Final Fantasy franchise is named after which food?", "q_ff",
             ["Flan", "Pudding", "Tapioca", "Jelly"]),
@@ -428,8 +609,8 @@ const questions = {
             ["A Boy and His Blob", "Jelly Days", "Oh Shit, It's The Slunch!", "Slime"]),
             new ImgQA("What is the name of this boss from Yoshi's Island?", "q_yi",
             ["Salvo the Slime", "Greg the Goop", "Jacob Jelly", "Bowser"]),
-            new ImgQA("¿De qué videojuego es este limo?", "q_ch",
-            ["Cuphead", "Dragon Quest", "Earthbound", "Pokémon"])
+            new ImgQA("&iquest;De qu&eacute; videojuego es este limo?", "q_ch",
+            ["Cuphead", "Dragon Quest", "Earthbound", "Pok&eacute;mon"])
         ]
     },
     "slimeBand": {
@@ -560,6 +741,7 @@ const questions = {
 };
 const categories = ["slimeMedia", "slimeBand", "slimeBio", "italian", "easy", "quotes"];
 function AnnounceCategories() {
+    gameData.hasAnnouncedCategories = true;
     const cats = gameData.categories.map(e => e.name);
     gameData.host.Speak("Alright! You landed on Slime Questions! The Slime Question Categories tonight are...")
     .then(() => {
@@ -610,19 +792,19 @@ function SelectCategory(idx) {
         return gameData.host.Speak(prefix + gameData.currentQuestion.question + " Is it...");
     })
     .then(() => {
-        DrawText("1. " + gameData.currentQuestion.answers[0], 30, 110, "people", 12, 196, "#FFFFFF");
+        DrawLeftText("1. " + gameData.currentQuestion.answers[0], 30, 110);
         return gameData.host.Speak("1. " + gameData.currentQuestion.answers[0]);
     })
     .then(() => {
-        DrawText("2. " + gameData.currentQuestion.answers[1], 30, 140, "people", 12, 196, "#FFFFFF");
+        DrawLeftText("2. " + gameData.currentQuestion.answers[1], 30, 140);
         return gameData.host.Speak("2. " + gameData.currentQuestion.answers[1]);
     })
     .then(() => {
-        DrawText("3. " + gameData.currentQuestion.answers[2], 30, 170, "people", 12, 196, "#FFFFFF");
+        DrawLeftText("3. " + gameData.currentQuestion.answers[2], 30, 170);
         return gameData.host.Speak("3. " + gameData.currentQuestion.answers[2]);
     })
     .then(() => {
-        DrawText("4. " + gameData.currentQuestion.answers[3], 30, 200, "people", 12, 196, "#FFFFFF");
+        DrawLeftText("4. " + gameData.currentQuestion.answers[3], 30, 200);
         return gameData.host.Speak("or 4. " + gameData.currentQuestion.answers[3] + "?");
     })
     .then(() => {

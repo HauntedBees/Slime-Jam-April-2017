@@ -13,14 +13,35 @@ const sheetOffsets = {
 const fullScreenDims = { x: 0, y: 0, w: 256, h: 224 };
 const miscDims = {
     "wordtilesm": { x: 0, y: 0, w: 13, h: 32 },
-    "wordtile": { x: 0, y: 0, w: 19, h: 32 }  
+    "wordtile": { x: 0, y: 0, w: 19, h: 32 },
+    "thwuck": dx => ({ x: 101 * dx, y: 0, w: 101, h: 232, dw: 34, dh: 77 })
 };
 const GetIndex = (x, offset, dims) => ({ x: (x + offset.x) * dims.x, y: offset.y * dims.y, w: dims.x, h: dims.y });
 const GetHeadIndex = (p, type) => GetIndex(p[type], sheetOffsets[type], bodyDims["head"]);
 const GetButtonIndex = (i, small) => GetIndex(i, sheetOffsets["none"], bodyDims[small ? "buttonsmall" : "button"]);
 
-
-
+// WHEEL! OF! SLIME!!!
+let thwuckAngles = [36, 72, 144, 162, 216, 234, 288, 324];
+thwuckAngles = thwuckAngles.map(e => e + 2);
+const thwuckP1Angles = thwuckAngles.map(e => e + 1);
+const thwuckP2Angles = thwuckAngles.map(e => e + 2);
+const thwuckP3Angles = thwuckAngles.map(e => e + 3);
+function DrawWheel(fuckingAngle) {
+    ClearLayer("people");
+    fuckingAngle = (fuckingAngle || 0) % 360;
+    const layer = "people";
+    const ctx = gameData.ctx[layer];
+    ctx.save();
+    ctx.translate(128, 178);
+    ctx.rotate(fuckingAngle * Math.PI/180);
+    DrawImage(layer, gameData.sheets["wheel"], -128, -128, { x: 0, y: 0, w: 667, h: 667, dw: 256, dh: 256 });
+    ctx.restore();
+    const testAngle = Math.floor(fuckingAngle);
+    let thwuckAmount = 0;
+    if(thwuckAngles.indexOf(testAngle) >= 0 || thwuckP1Angles.indexOf(testAngle) >= 0) { thwuckAmount = 1; }
+    if(thwuckP2Angles.indexOf(testAngle) >= 0 || thwuckP3Angles.indexOf(testAngle) >= 0) { thwuckAmount = 2; }
+    DrawImage(layer, gameData.sheets["thwuck"], 112, 0, miscDims.thwuck(thwuckAmount));
+}
 
 // Sentences
 function DrawSentence() {
@@ -81,18 +102,7 @@ function DrawBoard(isFirstTime) {
     });
 }
 function DrawBoardText(t, x, y, header) {
-    DrawText(t, x, y, "people", header ? 12 : 16, 50);
-}
-
-function DrawScreen(text) {
-    DrawImage("background", gameData.sheets["screen"], 0, 0, fullScreenDims);
-    DrawText(text, 10, 65, "people", 13, 236, "#FFFFFF");
-}
-
-function DrawButton(i, x, y, small) {
-    const dims = GetButtonIndex(i, small || false);
-    if(small) { dims.dw = dims.w / 2; dims.dh = dims.h / 2; }
-    DrawImage("UI", gameData.sheets["buttons"], x, y, dims);
+    DrawCenterText(t, x + 25, y, header ? 12 : 16, 50);
 }
 
 // General
@@ -113,10 +123,18 @@ function DrawPerson(p, x, y, justBooth) {
         DrawImage("people", sheet, x, y, mouf);
     }
     DrawBooth("people", x - 15, y + 70);
-    DrawText(p.firstName, x, y + 100, "people");
-    DrawText("" + p.score, x + 15, y + 140, "people", 22);
+    DrawCenterText(p.firstName, x + 20, y + 100);
+    DrawCenterText("" + p.score, x + 20, y + 142, 22);
 }
-
+function DrawButton(i, x, y, small) {
+    const dims = GetButtonIndex(i, small || false);
+    if(small) { dims.dw = dims.w / 2; dims.dh = dims.h / 2; }
+    DrawImage("UI", gameData.sheets["buttons"], x, y, dims);
+}
+function DrawScreen(text) {
+    DrawImage("background", gameData.sheets["screen"], 0, 0, fullScreenDims);
+    DrawCenterText(text, 124, 46, 13, 230, "#FFFFFF");
+}
 
 // Helpers
 function DrawImage(layerName, img, x, y, point) {
@@ -133,14 +151,56 @@ function DrawLetter(l, x, y, layer, size, color) {
     ctx.font = "bold " + size + "px sans-serif";
     ctx.fillText(l, x, y);
 }
-function DrawText(t, x, y, layer, size, maxWidth, color) {
-    layer = layer || "text";
+function DrawUIText(t, x, y) {
+    x = x || 2; y = y || 10;
+    const maxWidth = 200;
+    const ctx = gameData.ctx["UI"];
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#000000";
+    ctx.font = "16px sans-serif";
+    t = t.replace(/{doc}/g, ",").replace(/{sos}/g, "").replace(/{g}/g, "g").replace(/{Emo}/g, "Emo");
+    const ddy = 16, ts = t.split(" ");
+    let row = ts[0], dy = 0;
+    for(let i = 1; i < ts.length; i++) {
+        const textInfo = ctx.measureText(row + " " + ts[i]);
+        if(textInfo.width > maxWidth || row.indexOf("\n") >= 0) {
+            ctx.fillText(row, x, y + dy);
+            dy += ddy;
+            row = ts[i];
+        } else {
+            row += " " + ts[i];
+        }
+    }
+    ctx.fillText(row, x, y + dy);
+}
+function DrawLeftText(t, x, y) {
+    const size = 12, maxWidth = 196;
+    x = x || 2; y = y || 10;
+    const ctx = gameData.ctx["people"];
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = size + "px sans-serif";
+    t = t.replace(/{doc}/g, ",").replace(/{sos}/g, "").replace(/{g}/g, "g").replace(/{Emo}/g, "Emo");
+    const ddy = size, ts = t.split(" ");
+    let row = ts[0], dy = 0;
+    for(let i = 1; i < ts.length; i++) {
+        const textInfo = ctx.measureText(row + " " + ts[i]);
+        if(textInfo.width > maxWidth || row.indexOf("\n") >= 0) {
+            ctx.fillText(row, x, y + dy);
+            dy += ddy;
+            row = ts[i];
+        } else {
+            row += " " + ts[i];
+        }
+    }
+    ctx.fillText(row, x, y + dy);
+}
+function DrawCenterText(t, x, y, size, maxWidth, color) {
     size = size || 11;
     x = x || 2; y = y || 10;
-    if(layer === "text") { ClearLayer("text"); }
     maxWidth = maxWidth || (256 - 2 - x);
-    const ctx = gameData.ctx[layer];
-    ctx.textAlign = "left";
+    const ctx = gameData.ctx["people"];
+    ctx.textAlign = "center";
     ctx.fillStyle = color || "#000000";
     ctx.font = size + "px sans-serif";
     t = t.replace(/{doc}/g, ",").replace(/{sos}/g, "").replace(/{g}/g, "g").replace(/{Emo}/g, "Emo");
@@ -158,5 +218,29 @@ function DrawText(t, x, y, layer, size, maxWidth, color) {
     }
     ctx.fillText(row, x, y + dy);
 }
+function DrawTopText(t) {
+    const x = 2, y = 10, maxWidth = 252;
+    ClearLayer("textBack");
+    ClearLayer("text");
+    const ctx = gameData.ctx["text"];
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#000000";
+    ctx.font = "11px sans-serif";
+    t = t.replace(/{doc}/g, ",").replace(/{sos}/g, "").replace(/{g}/g, "g").replace(/{Emo}/g, "Emo");
+    const ddy = 11, ts = t.split(" ");
+    let row = ts[0], dy = 0;
+    for(let i = 1; i < ts.length; i++) {
+        const textInfo = ctx.measureText(row + " " + ts[i]);
+        if(textInfo.width > maxWidth || row.indexOf("\n") >= 0) {
+            ctx.fillText(row, x, y + dy);
+            dy += ddy;
+            row = ts[i];
+        } else {
+            row += " " + ts[i];
+        }
+    }
+    ctx.fillText(row, x, y + dy);
+    gameData.ctx["textBack"].fillRect(0, 0, 256, y + dy + 6);
+}
 const ClearLayer = layerName => gameData.ctx[layerName].clearRect(0, 0, 256, 224);
-function ClearAllLayers() { for(const key in gameData.ctx) { ClearLayer(key); } } 
+function ClearAllLayers() { for(const key in gameData.ctx) { ClearLayer(key); } }   

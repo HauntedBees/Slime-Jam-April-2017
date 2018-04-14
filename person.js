@@ -23,7 +23,7 @@ function Person() {
     this.voice = IRange(0, gameData.voices.length);
     this.pitch = RoundNear(FRange(0.25, 1.75), 5);
     this.rate = RoundNear(FRange(0.5, 1.25), 5);
-    this.quirks = 0;
+    this.quirks = 0; this.subquirk = 0;
 
     this.Speak = function(t) {
         const curPlayer = gameData.contestants[gameData.currentPlayer];
@@ -37,7 +37,7 @@ function Person() {
             .replace(/{fn0}/g, gameData.contestants[0].firstName)
             .replace(/{fn1}/g, gameData.contestants[1].firstName)
             .replace(/{fn2}/g, gameData.contestants[2].firstName);
-        ft = ProcessQuirks(ft, this.quirks);
+        ft = ProcessQuirks(ft, this.quirks, this.subquirk);
         const written = this.firstName + ": " + ft.replace(/{doc}/g, ",").replace(/{sos}/g, "").replace(/{g}/g, "g").replace(/{Emo}/g, "Emo");
         const spoken = ft.replace(/{doc}/g, "").replace(/{sos}/g, " ").replace(/___/g, "blank").replace(/{g}/g, "juh").replace(/{Emo}/g, "eemo");
         return new Promise((resolve, reject) => {
@@ -49,7 +49,7 @@ function Person() {
             msg.onend = function() { resolve(); }
             msg.onerror = function() { reject(); };
             speechSynthesis.speak(msg);
-            DrawText(written);
+            DrawTopText(written);
         });
     };
 }

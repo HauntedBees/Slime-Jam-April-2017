@@ -16,9 +16,13 @@
                 image-rendering: pixelated;
                 -ms-interpolation-mode: nearest-neighbor;
                 left: 0;
-                margin: 0 auto;
+                margin: auto;
                 position: absolute;
-                right: 0; 
+                right: 0;
+                top: 0;
+                bottom: 0;
+                position: absolute;
+                display: block;
                 text-align: center;
                 width: 1024;
                 height: 896;
@@ -29,18 +33,22 @@
         <div id="canvasContainer">
             <canvas id="background" width="256" height="224"></canvas>
             <canvas id="people" width="256" height="224"></canvas>
-            <canvas id="UI" width="256" height="224"></canvas>
+            <canvas id="mouf" width="256" height="224"></canvas>
+            <canvas id="slimeParty" width="256" height="224"></canvas>
             <canvas id="textBack" width="256" height="224"></canvas>
+            <canvas id="UI" width="256" height="224"></canvas>
+            <canvas id="pnum" width="256" height="224"></canvas>
             <canvas id="text" width="256" height="224"></canvas>
         </div>
-        <script src="helpers.js"></script>
+        <script src="out.min.js"></script>
+        <!--<script src="helpers.js"></script>
         <script src="data.js"></script>
         <script src="words.js"></script>
         <script src="games.js"></script>
         <script src="person.js"></script>
         <script src="drawing.js"></script>
         <script src="slime.js"></script>
-        <script src="input.js"></script>
+        <script src="input.js"></script>-->
         <script type="text/javascript">document.addEventListener("DOMContentLoaded", SlimeInit);</script>
     </body>
 </html>

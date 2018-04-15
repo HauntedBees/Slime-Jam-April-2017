@@ -429,10 +429,10 @@ function SetUpDatingQuestions() {
     ClearAllLayers();
     DrawImage("background", gameData.sheets["screen"], 0, 0, fullScreenDims);
     DrawLeftText("Q. " + dq.q, 30, 50);
-    DrawLeftText("1. " + dq.a[answers[0]], 30, 85);
-    DrawLeftText("2. " + dq.a[answers[1]], 30, 120);
-    DrawLeftText("3. " + dq.a[answers[2]], 30, 155);
-    DrawLeftText("4. " + dq.a[answers[3]], 30, 190);
+    DrawLeftText("1. " + dq.a[answers[0]].replace(/{cfn}/g, curPlayer.firstName), 30, 85);
+    DrawLeftText("2. " + dq.a[answers[1]].replace(/{cfn}/g, curPlayer.firstName), 30, 120);
+    DrawLeftText("3. " + dq.a[answers[2]].replace(/{cfn}/g, curPlayer.firstName), 30, 155);
+    DrawLeftText("4. " + dq.a[answers[3]].replace(/{cfn}/g, curPlayer.firstName), 30, 190);
     for(let i = 0; i < 4; i++) { DrawButton(i, 4, 65 + i * 35, true); }
     ReadyCurrentPlayer();
     gameData.waitingAction = PickDatingAnswer;
@@ -466,8 +466,8 @@ function PickDatingAnswer(idx) {
             ClearAllLayers();
             DrawImage("background", gameData.sheets["screen"], 0, 0, fullScreenDims);
             DrawLeftText("Q. " + dq.q, 30, 70);
-            DrawLeftText("1. " + dq.a[gameData.datingChoices[0][1]], 30, 110);
-            DrawLeftText("2. " + dq.a[gameData.datingChoices[1][1]], 30, 150);
+            DrawLeftText("1. " + dq.a[gameData.datingChoices[0][1]].replace(/{cfn}/g, curPlayer.firstName), 30, 110);
+            DrawLeftText("2. " + dq.a[gameData.datingChoices[1][1]].replace(/{cfn}/g, curPlayer.firstName), 30, 150);
             for(let i = 0; i < 2; i++) { DrawButton(i, 4, 95 + i * 40, true); }
             ReadyCurrentPlayer();
             gameData.waitingAction = PickDatingContestant;

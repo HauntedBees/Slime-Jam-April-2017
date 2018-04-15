@@ -14,7 +14,7 @@ const input = {
     GamepadDisconnected: function(e) {
         delete input.gamepads[e.gamepad.index];
         let hasKeys = false;
-        for(const key in input.gamepads) { hasKeys = true; break; }
+        for(var key in input.gamepads) { hasKeys = true; break; }
         if(!hasKeys) {
             console.log("no controllers left!");
             clearInterval(input.gamepadQueryIdx);
@@ -24,7 +24,7 @@ const input = {
         const gamepads = navigator.getGamepads();
         if(gamepads === undefined || gamepads === null) { return; }
         const buttonsDown = [];
-        for(const gp in gamepads) {
+        for(var gp in gamepads) {
             if(gamepads[gp] === null || gamepads[gp].id === undefined) { continue; }
             gamepads[gp].buttons.forEach((e, i) => {
                 if(e.pressed && i < 16) { buttonsDown.push(i); }

@@ -339,5 +339,5 @@ const ClearLayer = layerName => gameData.ctx[layerName].clearRect(0, 0, 256, 224
 function ClearAllLayers() {
     gameData.mouths = [];
     StopPNum();
-    for(const key in gameData.ctx) { ClearLayer(key); }
+    for(var key in gameData.ctx) { ClearLayer(key); }
 }   

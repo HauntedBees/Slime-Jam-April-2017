@@ -418,6 +418,7 @@ function AnnounceDating() {
     }).then(SetUpDatingQuestions);
 }
 function SetUpDatingQuestions() {
+    const curPlayer = gameData.contestants[gameData.currentPlayer];
     const dq = dating[gameData.currentDatingQ];
     const answers = [];
     while(answers.length < 4) {
@@ -440,6 +441,7 @@ function SetUpDatingQuestions() {
 function PickDatingAnswer(idx) {
     ClearAction();
     ClearAllUI();
+    const curPlayer = gameData.contestants[gameData.currentPlayer];
     gameData.datingChoices.push([gameData.currentPlayer, gameData.datingAnswers[idx]]);
     gameData.currentPlayer = (gameData.currentPlayer + 1) % 3;
     const dq = dating[gameData.currentDatingQ];
